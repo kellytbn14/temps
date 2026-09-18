@@ -1,0 +1,66 @@
+-- Hotfix: temporary indexes to speed up the IPO endpoints in production
+
+-- ================================================================
+-- GET /api/IPO/entry
+-- Targets the 3 queries hit by IpoService.getIPOEntry / IpoRepository
+-- ================================================================
+
+-- 1) GCP_IncentiveOptions: lookup by employee number (getIncentiveOptions)
+-- Speeds up the WHERE emp_num LIKE :empNum filter, avoiding a full table scan.
+CREATE NONCLUSTERED INDEX IX_GCP_IncentiveOptions_EmpNum
+ON [HR_Processing].[dbo].[GCP_IncentiveOptions] (emp_num);
+
+-- 2) earnings_dat_data: latest record per employee (getIncentiveAccess)
+-- Covers both the EmpNum equality filter and the correlated MAX(DateTimeProcessed)
+-- subquery, plus INCLUDE columns so the query can be answered from the index alone.
+CREATE NONCLUSTERED INDEX IX_earnings_dat_data_EmpNum_DateTimeProcessed
+ON [HR_Processing].[dbo].[earnings_dat_data] (EmpNum, DateTimeProcessed DESC)
+INCLUDE (IPORLEMRNUM, RSPFLAG70, RSPFLAG80, RSPFLAG85);
+
+-- 3) GCP_IncentiveOptionsHistory: latest history entry per employee (getLatestHistoryByEmpNum / getHistoryByEmpNum)
+-- Lets "WHERE EMP_NUM ... ORDER BY UPDATED_DT DESC" resolve via index seek instead of a sort.
+CREATE NONCLUSTERED INDEX IX_GCP_IncentiveOptionsHistory_EmpNum_UpdatedDt
+ON [HR_Processing].[dbo].[GCP_IncentiveOptionsHistory] (EMP_NUM, UPDATED_DT DESC);
+
+-- ================================================================
+-- POST /api/IPO/search
+-- Targets the CTE in IpoRepository.getIpoSearchEmployees (WEBEMPROLE + EMP)
+-- The query joins HR_Processing.HRA tables with HCM tables.
+-- ================================================================
+
+-- 4) WEB_ROLE: fast lookup by ROLE_NAME (filter is always 'EMP_CIP_OPTIONS')
+CREATE NONCLUSTERED INDEX IX_WEB_ROLE_RoleName
+ON [HR_Processing].[HRA].[WEB_ROLE] (ROLE_NAME)
+INCLUDE (WEB_ROLE_KEY);
+
+-- 5) WEB_EMP_ROLE: fast lookup of employees assigned to a given role
+CREATE NONCLUSTERED INDEX IX_WEB_EMP_ROLE_RoleKey
+ON [HR_Processing].[HRA].[WEB_EMP_ROLE] (WEB_ROLE_KEY)
+INCLUDE (WEB_EMP_ID);
+
+-- 6) EC_D_demographic_bioinformation: join target for WEB_EMP_ID -> employee_id
+CREATE NONCLUSTERED INDEX IX_EC_D_demographic_bioinformation_EmployeeId
+ON HCM..EC_D_demographic_bioinformation (employee_id)
+INCLUDE (internal_id);
+
+-- 7) EC_D_demographic_personalinfo: join by internal_id + effective date range filter
+CREATE NONCLUSTERED INDEX IX_EC_D_demographic_personalinfo_InternalId_Dates
+ON HCM..EC_D_demographic_personalinfo (internal_id, effective_start_date, effective_end_date)
+INCLUDE (first_name, last_name);
+
+-- 8) EC_D_demographic_jobinformation: join by internal_id + emplStatus/date range filter
+CREATE NONCLUSTERED INDEX IX_EC_D_demographic_jobinformation_InternalId
+ON HCM..EC_D_demographic_jobinformation (internal_id)
+INCLUDE (position, department, emplStatus, effective_start_date, effective_end_date, UserId);
+
+-- ================================================================
+-- GET /api/IPOHistory/detail/{employeeNum}
+-- Targets IpoRepository.getHistoryByEmpNum (paginated history list).
+-- POST /api/IPOHistory/search reuses getIpoSearchEmployees, already
+-- covered by indexes 4-8 above.
+-- ================================================================
+
+-- 9) GCP_IncentiveOptionsHistory: paginated history list per employee, sorted by PLAN_YEAR
+-- Different sort column than index 3 (UPDATED_DT), so it needs its own index.
+CREATE NONCLUSTERED INDEX IX_GCP_IncentiveOptionsHistory_EmpNum_PlanYear
+ON [HR_Processing].[dbo].[GCP_IncentiveOptionsHistory] (EMP_NUM, PLAN_YEAR DESC);
