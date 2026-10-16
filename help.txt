@@ -1,6 +1,5 @@
-fetch logs, from: "2026-10-13T16:47:22-05:00", to: "2026-10-13T16:56:11-05:00"
-| filter k8s.namespace.name == "nunison-uat"
-| filter k8s.container.name == "unison-employee-services-api"
-| filter contains(content, "email-pool-2")
-| sort timestamp asc
-| fields timestamp, loglevel, content
+ .headers(headers -> headers
+                        .referrerPolicy(referrer -> referrer
+                                .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN)
+                        )
+                )
