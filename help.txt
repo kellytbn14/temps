@@ -8,3 +8,9 @@ fetch logs, from: "2026-10-13T16:47:00-05:00", to: "2026-10-13T16:49:00-05:00"
 | fieldsAdd nivel = json[level], hilo = json[thread_name], requestId = json[requestId], userId = json[userId], clase = json[logger_name], mensaje = json[message]
 | sort timestamp asc
 | fields timestamp, nivel, hilo, requestId, userId, clase, mensaje
+
+
+
+| parse content, "JSON:json", parsingPrerequisite: startsWith(content, "{")
+| fieldsAdd nivel = json[level], hilo = json[thread_name], requestId = json[requestId], userId = json[userId]
+| fieldsRemove json
