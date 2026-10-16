@@ -1,16 +1,6 @@
-fetch logs, from: "2026-10-13T16:47:00-05:00", to: "2026-10-13T16:49:00-05:00"
+fetch logs, from: "2026-10-13T16:47:22-05:00", to: "2026-10-13T16:56:11-05:00"
 | filter k8s.namespace.name == "nunison-uat"
 | filter k8s.container.name == "unison-employee-services-api"
-| filter not contains(content, "javax.net.ssl")
-| filter not contains(content, "throwable")
-| filter not contains(content, "PassthroughCluster")
-| parse content, "JSON:json"
-| fieldsAdd nivel = json[level], hilo = json[thread_name], requestId = json[requestId], userId = json[userId], clase = json[logger_name], mensaje = json[message]
+| filter contains(content, "email-pool-2")
 | sort timestamp asc
-| fields timestamp, nivel, hilo, requestId, userId, clase, mensaje
-
-
-
-| parse content, "JSON:json", parsingPrerequisite: startsWith(content, "{")
-| fieldsAdd nivel = json[level], hilo = json[thread_name], requestId = json[requestId], userId = json[userId]
-| fieldsRemove json
+| fields timestamp, loglevel, content
