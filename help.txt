@@ -1,0 +1,16 @@
+Subject: Approval Request Team Calendar Release – CHG2246794
+
+Hello @Fajardo Herrera, Marian,
+
+I am requesting your approval to proceed with the change CHG2246794 for the Team Calendar application release in the production environment.
+
+This release (GHRT-2035) updates the statutory holidays for November and December 2026 and includes security fixes for third-party libraries.
+
+All required testing, documentation, implementation activities, validation steps, and rollback procedures have been completed and are documented in the change record. QAT and UAT sign-offs are attached.
+
+The deployment is scheduled for Friday, November 6, 2026, from 8:00 PM to 11:59 PM. Please review and provide your approval to proceed.
+
+Thank you,
+
+Kelly Stefania Tobon Montoya
+[tu cargo] | [tu equipo]
