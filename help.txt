@@ -1,4 +1,4 @@
 CHG2246794 - GHRT-2035 - 2026 Last Holidays update for Team Calendar
 
 
-Team Calendar release (GHRT-2035): update of the statutory holidays for November and December 2026, and security fixes for third-party libraries. Version 4.32.0. Population impacted: Canada. QAT and UAT sign-offs attached to the change.
+Team Calendar is updated as requested in intake GHRT-2035: the statutory holidays for November and December 2026 are updated, so the calendar shows the correct holiday dates for the rest of the year, and third-party libraries are upgraded to fix security vulnerabilities reported by our security monitoring platforms.
